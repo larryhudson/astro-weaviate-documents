@@ -1,0 +1,31 @@
+---
+import Layout from "@src/components/Layout.astro";
+import { Debug } from "astro:components";
+import { getDocumentsForUser } from "@src/weaviate/query";
+
+const userId = 1;
+const documents = await getDocumentsForUser(userId);
+---
+
+<Layout>
+	<h2>Documents</h2>
+	<ul>
+		{
+			documents.map((document) => (
+				<li>
+					<a href={`/documents/${document.id}`}>
+						{document.filename}
+					</a>
+				</li>
+			))
+		}
+	</ul>
+
+	<h2>Upload a new document</h2>
+	<form method="POST" action="/documents" enctype="multipart/form-data">
+		<label for="file">File</label>
+		<input id="file" name="file" type="file" />
+
+		<button>Upload document</button>
+	</form>
+</Layout>

@@ -1,0 +1,24 @@
+---
+import Layout from "@src/components/Layout.astro";
+import { Debug } from "astro:components";
+import { searchDocuments } from "@src/weaviate/query";
+
+const searchQuery = Astro.url.searchParams.get("q");
+
+let searchResults = [];
+
+if (searchQuery) {
+    searchResults = await searchDocuments({ searchQuery });
+}
+---
+
+<Layout title="Search">
+    <form>
+        <label for="search-input">Search query</label>
+        <input type="text" name="q" id="search-input" />
+        <button type="submit">Search</button>
+    </form>
+
+    <Debug {searchQuery} />
+    <Debug {searchResults} />
+</Layout>

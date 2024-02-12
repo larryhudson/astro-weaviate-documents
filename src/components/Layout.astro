@@ -1,0 +1,66 @@
+---
+const title = Astro.props.title || "Document database with Astro and Weaviate";
+const navItems = [
+  {
+    href: "/",
+    text: "Documents",
+  },
+  {
+    href: "/search",
+    text: "Search",
+  },
+];
+const currentUrl = Astro.url.pathname;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header>
+      <nav>
+        <ul>
+          {
+            navItems.map((item) => (
+              <li>
+                <a
+                  href={item.href}
+                  aria-current={currentUrl === item.href ? "page" : undefined}
+                >
+                  {item.text}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </header>
+    <main>
+      <h1>{title}</h1>
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style>
+  html {
+    background-color: lightgray;
+  }
+
+  body {
+    background-color: white;
+    padding: 2rem;
+    font-family: system-ui;
+    max-width: 60rem;
+    margin-inline: auto;
+  }
+
+  a[aria-current="page"] {
+    font-weight: bold;
+  }
+</style>

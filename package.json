@@ -1,0 +1,27 @@
+{
+  "name": "astro-weaviate-documents",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/node": "^8.2.0",
+    "astro": "^4.3.2",
+    "better-sqlite3": "^9.4.0",
+    "html-to-text": "^9.0.5",
+    "llm-chunk": "^0.0.1",
+    "mammoth": "^1.6.0",
+    "openai": "^4.26.0",
+    "turndown": "^7.1.2",
+    "weaviate-ts-embedded": "^1.2.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.4",
+    "prettier-plugin-astro": "^0.13.0"
+  }
+}

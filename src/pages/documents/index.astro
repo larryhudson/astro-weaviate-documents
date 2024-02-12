@@ -1,0 +1,32 @@
+---
+import { uploadDocument } from "@src/weaviate/crud";
+
+if (Astro.request.method === "POST") {
+    // create a new brainstorm
+    const formData = await Astro.request.formData();
+    const file = formData.get("file") as File | null;
+
+    if (!file) {
+        return Astro.redirect("/?error=No file provided");
+    }
+
+    const userId = 1;
+
+    const fileArrayBuffer = await file.arrayBuffer();
+    const fileBuffer = Buffer.from(fileArrayBuffer);
+
+    const filename = file.name;
+    const filetype = file.type;
+
+    const createdDocument = await uploadDocument({
+        fileBuffer,
+        filename,
+        filetype,
+        userId,
+    });
+
+    return Astro.redirect(`/documents/${createdDocument.id}`);
+} else {
+    return Astro.redirect("/");
+}
+---
