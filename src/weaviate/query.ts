@@ -22,7 +22,27 @@ export async function getDocumentsForUser(userId: number) {
     return documents;
 }
 
+export async function getTagsForUser(userId: number) {
+    const queryResponse = await weaviateClient.graphql
+        .get()
+        .withClassName("DocumentTag")
+        .withFields("name _additional { id }")
+        .withWhere({
+            path: ["userId"],
+            operator: "Equal",
+            valueNumber: userId
+        })
+        .do();
 
+    const tags = queryResponse.data.Get.DocumentTag.map((tag) => {
+        return {
+            id: tag._additional.id,
+            name: tag.name
+        }
+    })
+
+    return tags;
+}
 
 export async function getSimilarBrainstorms({
     brainstormId
@@ -122,6 +142,12 @@ export async function getDocumentWithChunksById({
                     content
                 }
             }
+            hasTags {
+                ... on DocumentTag {
+                    _additional { id }
+                    name
+                }
+            }
             _additional {
                 id
             }
@@ -142,18 +168,75 @@ export async function getDocumentWithChunksById({
     return documentObj;
 }
 
-export async function searchDocuments({
-    searchQuery
-}) {
+export async function getTagWithDocumentsById({ tagId }: { tagId: string }) {
     const queryResponse = await weaviateClient.graphql
         .get()
+        .withClassName("DocumentTag")
+        .withFields(`
+            name
+            hasDocuments {
+                ... on Document {
+                    filename
+                    _additional { id }
+                }
+            }
+            _additional {
+                id
+            }
+        `)
+        .withWhere({
+            path: ["id"],
+            operator: "Equal",
+            valueString: tagId
+        })
+        .do();
+
+    if (queryResponse.data.Get.DocumentTag.length === 0) {
+        return null;
+    }
+
+    const tagObj = queryResponse.data.Get.DocumentTag[0];
+
+    return tagObj;
+
+}
+
+export async function searchDocuments({
+    searchQuery,
+    tagFilter,
+    generativeType,
+    generativePrompt
+}: {
+    searchQuery: string
+    tagFilter: string | null
+    generativeType: "" | "grouped-task" | "single-prompt"
+    generativePrompt: string
+}) {
+    let query = weaviateClient.graphql
+        .get()
         .withClassName("DocumentChunk")
-        .withFields("title content hasDocument { ... on Document { filename } } _additional { id score explainScore  }")
+        .withFields("title content hasDocument { ... on Document { filename } }")
         .withLimit(5)
         .withHybrid({
             query: searchQuery,
         })
-        .do();
+
+    if (tagFilter) {
+        query = query
+            .withWhere({
+                path: ["hasDocument", "Document", "hasTags", "DocumentTag", "id"],
+                operator: "Equal",
+                valueString: tagFilter
+            })
+    }
+
+    if (generativeType === "grouped-task") {
+        query = query.withGenerate({ groupedTask: generativePrompt })
+    } else if (generativeType === "single-prompt") {
+        query = query.withGenerate({ singlePrompt: generativePrompt })
+    }
+
+    const queryResponse = await query.do();
 
     const documentChunks = queryResponse.data.Get.DocumentChunk
 
