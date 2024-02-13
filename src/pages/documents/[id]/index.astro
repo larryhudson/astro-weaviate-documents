@@ -138,6 +138,16 @@ const document = await getDocumentWithChunksById({ documentId });
             </>
         )
     }
+    <h2>Tags</h2>
+    <ul>
+        {
+            document.hasTags.map((tag) => (
+                <li>
+                    <a href={`/tags/${tag._additional.id}`}>{tag.name}</a>
+                </li>
+            ))
+        }
+    </ul>
     <h2>Chunks</h2>
     {
         document.hasChunks.map((chunk) => (

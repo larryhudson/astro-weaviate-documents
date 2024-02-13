@@ -5,6 +5,7 @@ if (Astro.request.method === "POST") {
     // create a new brainstorm
     const formData = await Astro.request.formData();
     const file = formData.get("file") as File | null;
+    const tagIds = formData.getAll("tagId");
 
     if (!file) {
         return Astro.redirect("/?error=No file provided");
@@ -23,6 +24,7 @@ if (Astro.request.method === "POST") {
         filename,
         filetype,
         userId,
+        tagIds,
     });
 
     return Astro.redirect(`/documents/${createdDocument.id}`);

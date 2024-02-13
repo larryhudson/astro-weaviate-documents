@@ -1,24 +1,105 @@
 ---
 import Layout from "@src/components/Layout.astro";
 import { Debug } from "astro:components";
-import { searchDocuments } from "@src/weaviate/query";
+import { searchDocuments, getTagsForUser } from "@src/weaviate/query";
 
 const searchQuery = Astro.url.searchParams.get("q");
+const tagFilter = Astro.url.searchParams.get("tag");
+const generativeType = Astro.url.searchParams.get("generative-type");
+const generativePrompt = Astro.url.searchParams.get("generative-prompt");
 
 let searchResults = [];
 
+const userId = 1;
+const tags = await getTagsForUser(userId);
+
 if (searchQuery) {
-    searchResults = await searchDocuments({ searchQuery });
+    searchResults = await searchDocuments({
+        searchQuery,
+        tagFilter,
+        generativeType,
+        generativePrompt,
+    });
 }
 ---
 
 <Layout title="Search">
     <form>
         <label for="search-input">Search query</label>
-        <input type="text" name="q" id="search-input" />
+        <textarea name="q" id="search-input">{searchQuery || ""}</textarea>
+
+        <fieldset>
+            <legend>Filter by tag</legend>
+            <select name="tag">
+                <option value="" selected={!tagFilter ? "true" : undefined}
+                    >All</option
+                >
+                {
+                    tags.map((tag) => (
+                        <option
+                            value={tag.id}
+                            selected={tagFilter === tag.id ? "true" : undefined}
+                        >
+                            {tag.name}
+                        </option>
+                    ))
+                }
+            </select>
+        </fieldset>
+        <fieldset>
+            <legend>Generative query</legend>
+            <label>
+                <input
+                    type="radio"
+                    name="generative-type"
+                    value=""
+                    checked={!generativeType ? "true" : undefined}
+                />
+                None
+            </label>
+
+            <label>
+                <input
+                    type="radio"
+                    name="generative-type"
+                    value="single-prompt"
+                    checked={generativeType === "single-prompt"
+                        ? "true"
+                        : undefined}
+                />
+                Single prompt
+            </label>
+
+            <label>
+                <input
+                    type="radio"
+                    name="generative-type"
+                    value="grouped-task"
+                    checked={generativeType === "grouped-task"
+                        ? "true"
+                        : undefined}
+                />
+                Grouped task
+            </label>
+            <br />
+
+            <label>
+                Generative prompt
+                <br />
+                <textarea name="generative-prompt"> </textarea>
+            </label>
+        </fieldset>
+
         <button type="submit">Search</button>
     </form>
 
     <Debug {searchQuery} />
     <Debug {searchResults} />
 </Layout>
+
+<style>
+    textarea {
+        width: 100%;
+        height: 100px;
+    }
+</style>

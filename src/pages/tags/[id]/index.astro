@@ -1,0 +1,26 @@
+---
+import Layout from "@src/components/Layout.astro";
+import { Debug } from "astro:components";
+import { getTagWithDocumentsById } from "@src/weaviate/query";
+
+const tagId = Astro.params.id;
+
+const tag = await getTagWithDocumentsById({ tagId });
+const documents = tag.hasDocuments;
+---
+
+<Layout title={`Tag: ${tag.name}`}>
+    <p><a href="/tags/">Back to all tags</a></p>
+    <h2>Documents</h2>
+    <ul>
+        {
+            documents.map((document) => (
+                <li>
+                    <a href={`/documents/${document._additional.id}`}>
+                        {document.filename}
+                    </a>
+                </li>
+            ))
+        }
+    </ul>
+</Layout>
