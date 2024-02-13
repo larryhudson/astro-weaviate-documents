@@ -4,15 +4,34 @@ import { convertDocxToMarkdownChunks } from "@src/extractors/docx";
 import path from "path";
 import fs from "fs";
 
+export async function createTag({
+    userId,
+    name
+}: {
+    userId: number,
+    name: string
+}) {
+    const createdTag = await weaviateClient.data.creator()
+        .withClassName("DocumentTag")
+        .withProperties({
+            userId,
+            name
+        }).do();
+
+    return createdTag;
+}
+
 export async function uploadDocument({
     fileBuffer,
     filename,
     filetype,
-    userId }: {
+    userId,
+    tagIds }: {
         fileBuffer: Buffer,
         filename: string,
         filetype: string,
-        userId: number
+        userId: number,
+        tagIds: string[]
     }) {
     const currentDate = new Date().toISOString();
 
@@ -27,6 +46,14 @@ export async function uploadDocument({
 
     // write the file buffer to the uploads folder
     const uploadsFolder = path.join(".", "uploads");
+
+    // sort of hacky
+    try {
+        await fs.promises.access(uploadsFolder);
+    } catch (error) {
+        await fs.promises.mkdir(uploadsFolder);
+    }
+
     const uploadPath = path.join(uploadsFolder, diskFilename);
 
     await fs.promises.writeFile(uploadPath, fileBuffer);
@@ -82,6 +109,36 @@ export async function uploadDocument({
                     .payload()
             )
             .do();
+    }
+
+    if (tagIds.length > 0) {
+        for (const tagId of tagIds) {
+            await weaviateClient.data.referenceCreator()
+                .withClassName("Document")
+                .withId(createdDocument.id as string)
+                .withReferenceProperty("hasTags")
+                .withReference(
+                    weaviateClient.data
+                        .referencePayloadBuilder()
+                        .withClassName("DocumentTag")
+                        .withId(tagId)
+                        .payload()
+                )
+                .do();
+
+            await weaviateClient.data.referenceCreator()
+                .withClassName("DocumentTag")
+                .withId(tagId)
+                .withReferenceProperty("hasDocuments")
+                .withReference(
+                    weaviateClient.data
+                        .referencePayloadBuilder()
+                        .withClassName("Document")
+                        .withId(createdDocument.id as string)
+                        .payload()
+                )
+                .do();
+        }
     }
 
     return createdDocument
@@ -196,7 +253,9 @@ async function deleteDocumentChunks({ documentId }: { documentId: string }) {
     if (!documentObj.properties.hasChunks) {
         return;
     }
-    const documentChunkIds = documentObj.properties.hasChunks.map((chunk: { _additional: { id: string } }) => chunk._additional.id);
+    console.log("Here's the document object from the getterById")
+    console.log(JSON.stringify(documentObj, null, 2))
+    const documentChunkIds = documentObj.properties.hasChunks.map((chunk) => chunk.beacon.split("/").at(-1));
 
     for (const chunkId of documentChunkIds) {
         await weaviateClient.data.deleter().withClassName("DocumentChunk").withId(chunkId).do();
