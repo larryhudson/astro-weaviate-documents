@@ -75,6 +75,28 @@ const DOCUMENT_CHUNK_CLASS = {
   ]
 }
 
+const DOCUMENT_TAG_CLASS = {
+  class: "DocumentTag",
+  description: "Document tags",
+  properties: [
+    {
+      name: "name",
+      dataType: ["text"],
+      description: "Tag name",
+    },
+    {
+      name: "userId",
+      dataType: ["number"],
+      description: "User ID",
+    },
+    {
+      name: "hasDocuments",
+      dataType: ["Document"],
+      description: "Document",
+    },
+  ]
+}
+
 // async function addSeedData() {
 //   for (const brainstorm of SEED_BRAINSTORMS) {
 //     const createdBrainstorm = await createBrainstorm({
@@ -116,6 +138,23 @@ export async function initialiseSchema(weaviateClient: EmbeddedClient) {
         name: "hasChunks",
         dataType: ["DocumentChunk"],
         description: "Document chunks",
+      })
+      .do();
+
+    const documentTagSchemaExists = await weaviateClient.schema.exists(DOCUMENT_TAG_CLASS.class);
+
+    if (!documentTagSchemaExists) {
+      await weaviateClient.schema.classCreator().withClass(DOCUMENT_TAG_CLASS).do();
+    }
+
+    // add reference from Document to DocumentTag
+    await weaviateClient.schema
+      .propertyCreator()
+      .withClassName("Document")
+      .withProperty({
+        name: "hasTags",
+        dataType: ["DocumentTag"],
+        description: "Document tags",
       })
       .do();
   }
