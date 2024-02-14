@@ -44,72 +44,6 @@ export async function getTagsForUser(userId: number) {
     return tags;
 }
 
-export async function getSimilarBrainstorms({
-    brainstormId
-}) {
-    const brainstormInWeaviate = await getBrainstormFromWeaviateById({
-        brainstormId
-    });
-
-    if (!brainstormInWeaviate) {
-        return [];
-    }
-
-    const brainstormWeaviateId = brainstormInWeaviate._additional.id;
-
-    const queryResponse = await weaviateClient.graphql
-        .get()
-        .withClassName("Brainstorm")
-        .withFields("brainstormId title _additional { distance }")
-        .withNearObject({
-            id: brainstormWeaviateId
-        })
-        .withWhere({
-            path: ["brainstormId"],
-            operator: "NotEqual",
-            valueNumber: brainstormId
-        })
-        .do();
-
-    const similarBrainstorms = queryResponse.data.Get.Brainstorm;
-
-    return similarBrainstorms;
-}
-
-export async function getBrainstormById({
-    brainstormId
-}: {
-    brainstormId: string
-}) {
-
-    const brainstormObj = await weaviateClient.data
-        .getterById()
-        .withClassName("Brainstorm")
-        .withId(brainstormId)
-        .withVector()
-        .do();
-
-    if (!brainstormObj) {
-        return null;
-    }
-
-    return brainstormObj;
-}
-
-type BrainstormWithMessages = {
-    title: string
-    hasMessages: {
-        role: string
-        content: string
-        _additional: {
-            id: string
-        }
-    }[]
-    _additional: {
-        id: string
-    }
-}
-
 type DocumentWithChunks = {
     filename: string
     hasChunks: {
@@ -242,24 +176,3 @@ export async function searchDocuments({
 
     return documentChunks;
 }
-
-export async function getBrainstormMessageById({
-    brainstormMessageId
-}: {
-    brainstormMessageId: string
-}) {
-
-    const brainstormMessageObj = await weaviateClient.data
-        .getterById()
-        .withClassName("BrainstormMessage")
-        .withId(brainstormMessageId)
-        .withVector()
-        .do();
-
-    if (!brainstormMessageObj) {
-        return null;
-    }
-
-    return brainstormMessageObj;
-}
-
