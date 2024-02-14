@@ -2,7 +2,6 @@
 import { uploadDocument } from "@src/weaviate/crud";
 
 if (Astro.request.method === "POST") {
-    // create a new brainstorm
     const formData = await Astro.request.formData();
     const file = formData.get("file") as File | null;
     const tagIds = formData.getAll("tagId");

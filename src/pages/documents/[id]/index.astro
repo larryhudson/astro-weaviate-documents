@@ -1,19 +1,7 @@
 ---
 import Layout from "@src/components/Layout.astro";
-import {
-    createBrainstormMessage,
-    updateBrainstormSummary,
-    deleteMessageAndNewer,
-    deleteBrainstorm,
-    deleteDocument,
-} from "@src/weaviate/crud";
+import { deleteDocument } from "@src/weaviate/crud";
 import { getDocumentWithChunksById } from "@src/weaviate/query";
-import {
-    getNewCoachMessageForBrainstorm,
-    generateSummaryForBrainstorm,
-    getRelevantContextFromSimilarBrainstormMessages,
-    findConnectionsWithOtherBrainstorms,
-} from "@src/weaviate/generative";
 import { Debug } from "astro:components";
 
 const documentId = Astro.params.id as string;
@@ -24,76 +12,10 @@ if (!documentExists) {
 }
 
 let actionStatus = "";
-let connections = null;
 
 if (Astro.request.method === "POST") {
     const formData = await Astro.request.formData();
     const action = formData.get("form-action") as string;
-
-    // if (action === "add-user-message") {
-    //     const message = formData.get("message") as string;
-    //     await createBrainstormMessage({
-    //         brainstormId,
-    //         content: message,
-    //         role: "user",
-    //     });
-    //     actionStatus = "Added new user message.";
-    // }
-
-    // if (action === "get-coach-message") {
-    //     const contextSource = formData.get("context-source");
-
-    //     const coachResponse = await getNewCoachMessageForBrainstorm({
-    //         brainstormId,
-    //         contextSource,
-    //     });
-
-    //     await createBrainstormMessage({
-    //         brainstormId,
-    //         content: coachResponse.coachMessage,
-    //         role: "assistant",
-    //     });
-
-    //     actionStatus =
-    //         "Added new coach message. Prompt: " + coachResponse.coachPrompt;
-    // }
-
-    // if (action === "generate-summary") {
-    //     const summaryResponse = await generateSummaryForBrainstorm({
-    //         brainstormId,
-    //     });
-    //     await updateBrainstormSummary({
-    //         brainstormId,
-    //         summary: summaryResponse.summary,
-    //     });
-    //     actionStatus =
-    //         "Generated summary. Prompt: " + summaryResponse.summaryPrompt;
-    // }
-
-    // if (action === "find-connections") {
-    //     connections = await findConnectionsWithOtherBrainstorms({
-    //         brainstormId,
-    //     });
-    //     actionStatus = "Found connections with other brainstorms.";
-    // }
-
-    // if (action === "get-relevant-context") {
-    //     const brainstormMessageId = formData.get("message-id") as string;
-    //     const relevantContext =
-    //         await getRelevantContextFromSimilarBrainstormMessages({
-    //             brainstormMessageId,
-    //         });
-    //     actionStatus = "Relevant context for message: " + relevantContext;
-    // }
-
-    // if (action === "delete-message-and-newer") {
-    //     const brainstormMessageId = formData.get("message-id") as string;
-    //     await deleteMessageAndNewer({
-    //         brainstormId,
-    //         brainstormMessageId,
-    //     });
-    //     actionStatus = "Messages deleted";
-    // }
 
     if (action === "delete-document") {
         await deleteDocument({
@@ -110,21 +32,6 @@ const document = await getDocumentWithChunksById({ documentId });
 <Layout title={`Document: ${document.filename}`}>
     <p><a href="/">Back to all documents</a></p>
     {actionStatus && <p class="status">{actionStatus}</p>}
-    <!-- {
-        connections && (
-            <>
-                <ul>
-                    {connections.map((connection) => (
-                        <li>
-                            <strong>{connection.title}</strong>
-                            <br />
-                            <pre>{connection.connections}</pre>
-                        </li>
-                    ))}
-                </ul>
-            </>
-        )
-    } -->
     <h2>Summary</h2>
     {
         document.summary && (
@@ -178,15 +85,5 @@ const document = await getDocumentWithChunksById({ documentId });
     .status {
         background-color: lightgreen;
         padding: 1rem;
-    }
-
-    .message {
-        margin-bottom: 1rem;
-    }
-
-    .message-buttons {
-        display: flex;
-        gap: 1rem;
-        margin: 0.5rem 0;
     }
 </style>
