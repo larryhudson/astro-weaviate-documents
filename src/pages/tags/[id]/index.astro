@@ -18,7 +18,7 @@ if (Astro.request.method === "POST") {
     }
 }
 
-const documents = tag.hasDocuments;
+const documents = tag.hasDocuments || [];
 ---
 
 <Layout title={`Tag: ${tag.name}`}>

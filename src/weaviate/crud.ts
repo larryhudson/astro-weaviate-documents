@@ -225,3 +225,34 @@ async function deleteReference({ fromClass, fromId, fromProperty, toClass, toId 
         )
         .do();
 }
+
+export async function addTagToDocument({
+    tagId,
+    documentId
+}) {
+    await weaviateClient.data.referenceCreator()
+        .withClassName("Document")
+        .withId(documentId)
+        .withReferenceProperty("hasTags")
+        .withReference(
+            weaviateClient.data
+                .referencePayloadBuilder()
+                .withClassName("DocumentTag")
+                .withId(tagId)
+                .payload()
+        )
+        .do();
+
+    await weaviateClient.data.referenceCreator()
+        .withClassName("DocumentTag")
+        .withId(tagId)
+        .withReferenceProperty("hasDocuments")
+        .withReference(
+            weaviateClient.data
+                .referencePayloadBuilder()
+                .withClassName("Document")
+                .withId(documentId)
+                .payload()
+        )
+        .do();
+}
