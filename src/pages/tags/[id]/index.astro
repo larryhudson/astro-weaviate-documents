@@ -2,15 +2,30 @@
 import Layout from "@src/components/Layout.astro";
 import { Debug } from "astro:components";
 import { getTagWithDocumentsById } from "@src/weaviate/query";
+import { deleteTag } from "@src/weaviate/crud";
 
 const tagId = Astro.params.id;
 
 const tag = await getTagWithDocumentsById({ tagId });
+
+if (Astro.request.method === "POST") {
+    const formData = await Astro.request.formData();
+    const formAction = formData.get("form-action");
+
+    if (formAction === "delete-tag") {
+        await deleteTag({ tagId });
+        return Astro.redirect("/tags/");
+    }
+}
+
 const documents = tag.hasDocuments;
 ---
 
 <Layout title={`Tag: ${tag.name}`}>
     <p><a href="/tags/">Back to all tags</a></p>
+    <form method="POST">
+        <button name="form-action" value="delete-tag">Delete tag</button>
+    </form>
     <h2>Documents</h2>
     <ul>
         {
