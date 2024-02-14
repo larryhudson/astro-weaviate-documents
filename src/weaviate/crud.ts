@@ -20,6 +20,26 @@ export async function createTag({
     return createdTag;
 }
 
+export async function deleteTag({ tagId }) {
+    const tagObj = await weaviateClient.data.getterById().withClassName("DocumentTag").withId(tagId).do();
+    const documentIds = tagObj.properties.hasDocuments.map((document) => document.beacon.split("/").at(-1));
+
+    for (const documentId of documentIds) {
+        console.log("Deleting reference from document to tag")
+        console.log("Document ID", documentId)
+        await deleteReference({
+            fromClass: "Document",
+            fromId: documentId,
+            fromProperty: "hasTags",
+            toClass: "DocumentTag",
+            toId: tagId
+        });
+    }
+
+    const tag = await weaviateClient.data.deleter().withClassName("DocumentTag").withId(tagId).do();
+    return tag;
+}
+
 export async function uploadDocument({
     fileBuffer,
     filename,
