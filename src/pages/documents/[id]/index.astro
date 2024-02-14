@@ -1,7 +1,7 @@
 ---
 import Layout from "@src/components/Layout.astro";
-import { deleteDocument } from "@src/weaviate/crud";
-import { getDocumentWithChunksById } from "@src/weaviate/query";
+import { deleteDocument, addTagToDocument } from "@src/weaviate/crud";
+import { getDocumentWithChunksById, getTagsForUser } from "@src/weaviate/query";
 import { Debug } from "astro:components";
 
 const documentId = Astro.params.id as string;
@@ -24,9 +24,20 @@ if (Astro.request.method === "POST") {
 
         return Astro.redirect("/");
     }
+
+    if (action === "add-tag") {
+        const tagId = formData.get("tag") as string;
+        await addTagToDocument({
+            documentId,
+            tagId,
+        });
+        actionStatus = `Tag "${tagId}" added to document`;
+    }
 }
 
 const document = await getDocumentWithChunksById({ documentId });
+const userId = 1;
+const tags = await getTagsForUser(userId);
 ---
 
 <Layout title={`Document: ${document.filename}`}>
@@ -55,6 +66,17 @@ const document = await getDocumentWithChunksById({ documentId });
             ))
         }
     </ul>
+    <form method="POST">
+        <fieldset>
+            <legend>Add tag</legend>
+            <select name="tag" id="add-tag-select">
+                <option value="">Select tag</option>
+                {tags.map((tag) => <option value={tag.id}>{tag.name}</option>)}
+            </select>
+            <a href="/tags/">Manage tags</a>
+        </fieldset>
+        <button name="form-action" value="add-tag">Add tag</button>
+    </form>
     <h2>Chunks</h2>
     {
         document.hasChunks.map((chunk) => (
