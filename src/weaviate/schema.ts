@@ -1,5 +1,4 @@
 import type { EmbeddedClient } from "weaviate-ts-embedded";
-import { createBrainstorm, createBrainstormMessage } from "./crud";
 
 const DOCUMENT_CLASS = {
   class: "Document",
