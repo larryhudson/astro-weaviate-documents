@@ -69,6 +69,7 @@ export async function getDocumentWithChunksById({
         .withClassName("Document")
         .withFields(`
             filename
+            htmlContent
             hasChunks {
                 ... on DocumentChunk {
                     _additional { id }

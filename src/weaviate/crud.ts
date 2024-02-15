@@ -1,5 +1,5 @@
 import { weaviateClient } from "./client";
-import { convertDocxToMarkdownChunks } from "@src/extractors/docx";
+import { convertDocxToHtml, convertDocxToMarkdownChunks, convertHtmlToMarkdownChunks } from "@src/extractors/docx";
 import path from "path";
 import fs from "fs";
 
@@ -77,6 +77,7 @@ export async function uploadDocument({
 
     await fs.promises.writeFile(uploadPath, fileBuffer);
 
+    const htmlContent = await convertDocxToHtml(uploadPath);
 
     // create the document in weaviate
     const createdDocument = await weaviateClient.data.creator()
@@ -86,11 +87,13 @@ export async function uploadDocument({
             userId,
             filepath: uploadPath,
             filetype,
+            htmlContent,
             createdAt: currentDate
         }).do();
 
+
     // TODO: this should happen in a background task, rather than within the HTTP request
-    const markdownChunks = await convertDocxToMarkdownChunks(uploadPath);
+    const markdownChunks = await convertHtmlToMarkdownChunks(htmlContent);
 
     // create a DocumentChunk for each markdown chunk
     for (const [index, chunk] of markdownChunks.entries()) {
