@@ -43,6 +43,13 @@ const tags = await getTagsForUser(userId);
 <Layout title={`Document: ${document.filename}`}>
     <p><a href="/">Back to all documents</a></p>
     {actionStatus && <p class="status">{actionStatus}</p>}
+    <h2>HTML content</h2>
+    <details>
+        <summary>View HTML content</summary>
+        <div class="document-html">
+            <div set:html={document.htmlContent} />
+        </div>
+    </details>
     <h2>Summary</h2>
     {
         document.summary && (
@@ -106,6 +113,21 @@ const tags = await getTagsForUser(userId);
 
     .status {
         background-color: lightgreen;
+        padding: 1rem;
+    }
+
+    details[open] summary {
+        position: sticky;
+        top: 0;
+
+        background-color: white;
+        padding: 0.5rem;
+        border-bottom: 2px solid black;
+    }
+
+    .document-html {
+        border: 2px solid black;
+        border-top-width: 0;
         padding: 1rem;
     }
 </style>

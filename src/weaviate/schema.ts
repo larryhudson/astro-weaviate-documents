@@ -26,6 +26,16 @@ const DOCUMENT_CLASS = {
       },
     },
     {
+      name: "htmlContent",
+      dataType: ["text"],
+      description: "HTML content",
+      moduleConfig: {
+        "text2vec-openai": {
+          skip: true,
+        },
+      },
+    },
+    {
       name: "filetype",
       dataType: ["text"],
       description: "File type",
