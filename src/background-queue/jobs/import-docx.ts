@@ -16,6 +16,7 @@ export async function importDocx({
     tagIds: string[],
     currentDate: string
 }) {
+    console.log("Importing document from this path:", uploadPath)
 
     const htmlContent = await convertDocxToHtml(uploadPath);
 

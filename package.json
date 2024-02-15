@@ -3,7 +3,9 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
+    "astro:dev": "astro dev",
+    "queue": "npx tsx src/background-queue/worker.ts",
+    "dev": "concurrently \"npm:astro:dev\" \"npm:queue\"",
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
@@ -14,6 +16,7 @@
     "astro": "^4.3.2",
     "better-sqlite3": "^9.4.0",
     "bullmq": "^5.1.11",
+    "dotenv": "^16.4.4",
     "html-to-text": "^9.0.5",
     "llm-chunk": "^0.0.1",
     "mammoth": "^1.6.0",
@@ -22,6 +25,7 @@
     "weaviate-ts-embedded": "^1.2.0"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "prettier": "^3.2.4",
     "prettier-plugin-astro": "^0.13.0"
   }

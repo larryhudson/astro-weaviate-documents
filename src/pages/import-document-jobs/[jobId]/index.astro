@@ -1,0 +1,20 @@
+---
+import { queue } from "@src/background-queue/queue";
+import { Debug } from "astro:components";
+import Layout from "@src/components/Layout.astro";
+
+const jobId = Astro.params.jobId;
+
+const job = await queue.getJob(jobId);
+const jobState = await queue.getJobState(jobId);
+
+if (jobState === "completed") {
+    const documentId = job.returnvalue?.id;
+    return Astro.redirect(`/documents/${documentId}`);
+}
+---
+
+<Layout>
+    <Debug {jobState} />
+    <Debug {job} />
+</Layout>

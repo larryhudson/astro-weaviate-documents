@@ -1,10 +1,10 @@
 import { Job, Worker } from "bullmq";
+import { importDocx } from "./jobs/import-docx";
 
 async function handleImportDocument(job: Job) {
-    const jobData = job.data;
-
-
-    console.log("Document imported", job.data);
+    if (job.name === "importDocx") {
+        return await importDocx(job.data);
+    }
 }
 
 const redisOptions = {
