@@ -1,7 +1,7 @@
 import { weaviateClient } from "./client";
-import { convertDocxToHtml, convertDocxToMarkdownChunks, convertHtmlToMarkdownChunks } from "@src/extractors/docx";
 import path from "path";
 import fs from "fs";
+import { queue } from "@src/background-queue/queue";
 
 export async function createTag({
     userId,
@@ -40,7 +40,7 @@ export async function deleteTag({ tagId }) {
     return tag;
 }
 
-export async function uploadDocument({
+export async function uploadDocumentAndAddToQueue({
     fileBuffer,
     filename,
     filetype,
@@ -77,97 +77,24 @@ export async function uploadDocument({
 
     await fs.promises.writeFile(uploadPath, fileBuffer);
 
-    const htmlContent = await convertDocxToHtml(uploadPath);
+    // add job to queue
+    // the actual code for this is in @src/background-queue/jobs/import-docx
+    const createdJob = await queue.add("importDocx", {
+        uploadPath,
+        filename,
+        filetype,
+        userId,
+        tagIds
+    });
 
-    // create the document in weaviate
-    const createdDocument = await weaviateClient.data.creator()
-        .withClassName("Document")
-        .withProperties({
-            filename,
-            userId,
-            filepath: uploadPath,
-            filetype,
-            htmlContent,
-            createdAt: currentDate
-        }).do();
+    const createdJobId = createdJob.id;
 
-
-    // TODO: this should happen in a background task, rather than within the HTTP request
-    const markdownChunks = await convertHtmlToMarkdownChunks(htmlContent);
-
-    // create a DocumentChunk for each markdown chunk
-    for (const [index, chunk] of markdownChunks.entries()) {
-        const createdChunk = await weaviateClient.data.creator()
-            .withClassName("DocumentChunk")
-            .withProperties({
-                title: `Chunk ${index + 1}`,
-                content: chunk
-            }).do();
-
-        // add a reference from the chunk to the document
-        await weaviateClient.data.referenceCreator()
-            .withClassName("Document")
-            .withId(createdDocument.id as string)
-            .withReferenceProperty("hasChunks")
-            .withReference(
-                weaviateClient.data
-                    .referencePayloadBuilder()
-                    .withClassName("DocumentChunk")
-                    .withId(createdChunk.id as string)
-                    .payload()
-            )
-            .do();
-
-        // add a reference from the document to the chunk
-        await weaviateClient.data.referenceCreator()
-            .withClassName("DocumentChunk")
-            .withId(createdChunk.id as string)
-            .withReferenceProperty("hasDocument")
-            .withReference(
-                weaviateClient.data
-                    .referencePayloadBuilder()
-                    .withClassName("Document")
-                    .withId(createdDocument.id as string)
-                    .payload()
-            )
-            .do();
-    }
-
-    if (tagIds.length > 0) {
-        for (const tagId of tagIds) {
-            await weaviateClient.data.referenceCreator()
-                .withClassName("Document")
-                .withId(createdDocument.id as string)
-                .withReferenceProperty("hasTags")
-                .withReference(
-                    weaviateClient.data
-                        .referencePayloadBuilder()
-                        .withClassName("DocumentTag")
-                        .withId(tagId)
-                        .payload()
-                )
-                .do();
-
-            await weaviateClient.data.referenceCreator()
-                .withClassName("DocumentTag")
-                .withId(tagId)
-                .withReferenceProperty("hasDocuments")
-                .withReference(
-                    weaviateClient.data
-                        .referencePayloadBuilder()
-                        .withClassName("Document")
-                        .withId(createdDocument.id as string)
-                        .payload()
-                )
-                .do();
-        }
-    }
-
-    return createdDocument
+    return createdJobId;
 }
 
 async function deleteDocumentChunks({ documentId }: { documentId: string }) {
     const documentObj = await weaviateClient.data.getterById().withClassName("Document").withId(documentId).do();
+
     if (!documentObj.properties.hasChunks) {
         return;
     }

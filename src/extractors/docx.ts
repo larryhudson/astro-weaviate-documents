@@ -15,7 +15,6 @@ export async function convertDocxToHtml(filePath: string): Promise<string> {
     return await mammoth.convertToHtml({ path: filePath }).then((result) => result.value);
 }
 
-
 export async function convertHtmlToMarkdownChunks(html: string): Promise<string[]> {
 
     const turndownService = new TurndownService({
