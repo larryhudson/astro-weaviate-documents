@@ -66,7 +66,7 @@ const tags = await getTagsForUser(userId);
     <h2>Tags</h2>
     <ul>
         {
-            document.hasTags.map((tag) => (
+            document.hasTags?.map((tag) => (
                 <li>
                     <a href={`/tags/${tag._additional.id}`}>{tag.name}</a>
                 </li>
