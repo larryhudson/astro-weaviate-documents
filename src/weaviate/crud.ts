@@ -1,7 +1,8 @@
 import { weaviateClient } from "./client";
-import { convertDocxToMarkdownChunks } from "@src/extractors/docx";
+import { convertDocxToHtml, convertDocxToMarkdownChunks, convertHtmlToMarkdownChunks } from "@src/extractors/docx";
 import path from "path";
 import fs from "fs";
+import { queue } from "@src/background-queue/queue";
 
 export async function createTag({
     userId,
@@ -77,6 +78,34 @@ export async function uploadDocument({
 
     await fs.promises.writeFile(uploadPath, fileBuffer);
 
+    // add job to queue
+    const jobId = await queue.add("importDocument", {
+        uploadPath,
+        filename,
+        filetype,
+        userId,
+        tagIds
+    });
+
+}
+
+async function importDocument({
+    uploadPath,
+    filename,
+    filetype,
+    userId,
+    tagIds,
+    currentDate
+}: {
+    uploadPath: string,
+    filename: string,
+    filetype: string,
+    userId: number,
+    tagIds: string[],
+    currentDate: string
+}) {
+
+    const htmlContent = await convertDocxToHtml(uploadPath);
 
     // create the document in weaviate
     const createdDocument = await weaviateClient.data.creator()
@@ -86,11 +115,13 @@ export async function uploadDocument({
             userId,
             filepath: uploadPath,
             filetype,
+            htmlContent,
             createdAt: currentDate
         }).do();
 
+
     // TODO: this should happen in a background task, rather than within the HTTP request
-    const markdownChunks = await convertDocxToMarkdownChunks(uploadPath);
+    const markdownChunks = await convertHtmlToMarkdownChunks(htmlContent);
 
     // create a DocumentChunk for each markdown chunk
     for (const [index, chunk] of markdownChunks.entries()) {
@@ -165,6 +196,7 @@ export async function uploadDocument({
 
 async function deleteDocumentChunks({ documentId }: { documentId: string }) {
     const documentObj = await weaviateClient.data.getterById().withClassName("Document").withId(documentId).do();
+
     if (!documentObj.properties.hasChunks) {
         return;
     }
